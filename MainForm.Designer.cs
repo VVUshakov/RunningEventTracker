@@ -81,7 +81,7 @@
             this.dataGridViewRecent.Location = new System.Drawing.Point(425, 20);
             this.dataGridViewRecent.Name = "dataGridViewRecent";
             this.dataGridViewRecent.RowHeadersVisible = false;
-            this.dataGridViewRecent.Size = new System.Drawing.Size(350, 150);
+            this.dataGridViewRecent.Size = new System.Drawing.Size(350, 186);
             this.dataGridViewRecent.TabIndex = 10;
             // 
             // btnStop
