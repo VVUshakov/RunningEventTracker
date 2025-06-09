@@ -57,6 +57,7 @@
     <Compile Include="Models\ParticipantStats.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ILapProcessor.cs" />
     <Compile Include="Services\IRaceTimer.cs" />
     <Compile Include="Services\RaceTimer.cs" />
     <EmbeddedResource Include="MainForm.resx">
