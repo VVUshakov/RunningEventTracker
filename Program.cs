@@ -18,7 +18,7 @@ class Program
     }
 
     [STAThread]
-    static void Main()
+    static void Main2()
     {
         var serviceProvider = ConfigureServices();
         using(var mainForm = serviceProvider.GetRequiredService<MainForm>())
