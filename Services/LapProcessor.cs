@@ -12,6 +12,7 @@ namespace RunningEventTracker.Services
     public class LapProcessor : ILapProcessor
     {
         private readonly List<LapRecord> _laps = new List<LapRecord>();
+        private DateTime _startTime; // Предполагается, что это свойство установлено заранее
 
         /// <summary>
         /// Зарегистрирует очередной круг для конкретного участника.
@@ -21,7 +22,7 @@ namespace RunningEventTracker.Services
             var lap = new LapRecord
             {
                 Participant = participantId,
-                TotalSeconds = /* рассчитать общее время */,
+                TotalSeconds = CalculateTotalSeconds(), // расчёт общего времени
                 LapNumber = CalculateLapNumber(participantId),
                 RecordTime = DateTime.Now
             };
@@ -43,6 +44,15 @@ namespace RunningEventTracker.Services
         private int CalculateLapNumber(int participantId)
         {
             return _laps.Where(x => x.Participant == participantId).Count() + 1;
+        }
+
+        /// <summary>
+        /// Рассчитывает общее время прошедших кругов.
+        /// </summary>
+        private double CalculateTotalSeconds()
+        {
+            // Предположительно, _startTime задаётся заранее, когда начинается забег
+            return (DateTime.Now - _startTime).TotalSeconds;
         }
     }
 }

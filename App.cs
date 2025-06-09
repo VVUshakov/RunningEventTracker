@@ -1,19 +1,23 @@
-﻿using System;
+﻿using RunningEventTracker.Services;
+using System;
 using System.Windows.Forms;
 
 namespace RunningEventTracker
 {
-    internal static class Program
+    static class App
     {
-        /// <summary>
-        /// Главная точка входа для приложения.
-        /// </summary>
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            // Передача экземпляров сервисов в конструктор MainForm
+            var raceTimer = new RaceTimer();
+            var lapProcessor = new LapProcessor();
+            var actionHistory = new ActionHistory();
+
+            Application.Run(new MainForm(raceTimer, lapProcessor, actionHistory));
         }
     }
 }

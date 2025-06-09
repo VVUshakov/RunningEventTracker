@@ -1,4 +1,394 @@
-﻿namespace RunningEventTracker
+using Microsoft.Extensions.DependencyInjection;
+using RunningEventTracker;
+using RunningEventTracker.Services;
+using System;
+using System.Windows.Forms;
+
+
+class Program
+{
+    static IServiceProvider ConfigureServices()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IRaceTimer, RaceTimer>();
+        services.AddSingleton<ILapProcessor, LapProcessor>();
+        services.AddSingleton<IActionHistory, ActionHistory>();
+        services.AddTransient<MainForm>();
+        return services.BuildServiceProvider();
+    }
+
+    [STAThread]
+    static void Main()
+    {
+        var serviceProvider = ConfigureServices();
+        using(var mainForm = serviceProvider.GetRequiredService<MainForm>())
+        {
+            Application.Run(mainForm);
+        }
+    }
+}
+
+using RunningEventTracker.Services;
+using System;
+using System.Windows.Forms;
+
+namespace RunningEventTracker
+{
+    static class App
+    {
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // Передача экземпляров сервисов в конструктор MainForm
+            var raceTimer = new RaceTimer();
+            var lapProcessor = new LapProcessor();
+            var actionHistory = new ActionHistory();
+
+            Application.Run(new MainForm(raceTimer, lapProcessor, actionHistory));
+        }
+    }
+}
+
+using System;
+
+
+namespace RunningEventTracker.Models
+{
+    /// <summary>
+    /// Представляет один зарегистрированный круг участия бегуна.
+    /// </summary>
+    public class LapRecord
+    {
+        /// <summary>
+        /// Идентификатор участника забега.
+        /// </summary>
+        public int Participant { get; set; }
+
+        /// <summary>
+        /// Общее время прохождения кругов в секундах.
+        /// </summary>
+        public double TotalSeconds { get; set; }
+
+        /// <summary>
+        /// Порядковый номер круга (начиная с 1).
+        /// </summary>
+        public int LapNumber { get; set; }
+
+        /// <summary>
+        /// Дата и время регистрации круга.
+        /// </summary>
+        public DateTime RecordTime { get; set; }
+    }
+}
+
+
+namespace RunningEventTracker.Models
+{
+    /// <summary>
+    /// Содержит агрегированные показатели по одному участнику.
+    /// </summary>
+    public class ParticipantStats
+    {
+        /// <summary>
+        /// Идентификатор участника.
+        /// </summary>
+        public int Participant { get; set; }
+
+        /// <summary>
+        /// Количество завершённых кругов.
+        /// </summary>
+        public int LapCount { get; set; }
+
+        /// <summary>
+        /// Общая сумма секунд, затраченных на участие.
+        /// </summary>
+        public double TotalSeconds { get; set; }
+
+        /// <summary>
+        /// Среднее время прохождения одного круга в секундах.
+        /// </summary>
+        public double AvgTime { get; set; }
+    }
+}
+
+
+
+using System.Collections.Generic;
+using System.Linq;
+
+
+namespace RunningEventTracker.Services
+{
+    /// <summary>
+    /// Служба для хранения недавней истории действий.
+    /// </summary>
+    public class ActionHistory : IActionHistory
+    {
+        private readonly Queue<string> _logs = new Queue<string>(5);
+
+        /// <summary>
+        /// Создает новую запись в журнале.
+        /// </summary>
+        public void Log(string message)
+        {
+            _logs.Enqueue(message);
+            if(_logs.Count > 5)
+                _logs.Dequeue();
+        }
+
+        /// <summary>
+        /// Возврат списка недавних записей.
+        /// </summary>
+        public IEnumerable<string> RecentLogs()
+        {
+            return _logs.Reverse().AsEnumerable();
+        }
+    }
+}
+
+
+using System.Collections.Generic;
+
+
+namespace RunningEventTracker.Services
+{
+    /// <summary>
+    /// Интерфейс для хранилища истории событий.
+    /// </summary>
+    public interface IActionHistory
+    {
+        /// <summary>
+        /// Записывает новое сообщение в журнал.
+        /// </summary>
+        void Log(string message);
+
+        /// <summary>
+        /// Предоставляет список недавних сообщений.
+        /// </summary>
+        IEnumerable<string> RecentLogs();
+    }
+}
+
+using RunningEventTracker.Models;
+using System.Collections.Generic;
+
+namespace RunningEventTracker.Services
+{
+    /// <summary>
+    /// Интерфейс для сервиса обработки зарегистрированных кругов.
+    /// </summary>
+    public interface ILapProcessor
+    {
+        /// <summary>
+        /// Регистрация нового круга для указанного участника.
+        /// </summary>
+        void ProcessLap(int participantId);
+
+        /// <summary>
+        /// Возвращает список всех зарегистрированных кругов.
+        /// </summary>
+        IEnumerable<LapRecord> GetAllLaps();
+    }
+}
+
+using System;
+
+namespace RunningEventTracker.Services
+{
+    /// <summary>
+    /// Интерфейс для таймера, позволяющего начать обратный отсчёт и останавливаться.
+    /// </summary>
+    public interface IRaceTimer
+    {
+        /// <summary>
+        /// Событие, срабатывающее каждые заданные интервалы времени.
+        /// </summary>
+        event EventHandler<EventArgs> Tick;
+
+        /// <summary>
+        /// Начинает работу таймера.
+        /// </summary>
+        void Start();
+
+        /// <summary>
+        /// Останавливает таймер.
+        /// </summary>
+        void Stop();
+    }
+}
+
+
+using RunningEventTracker.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+
+namespace RunningEventTracker.Services
+{
+    /// <summary>
+    /// Сервис для обработки кругов забега.
+    /// </summary>
+    public class LapProcessor : ILapProcessor
+    {
+        private readonly List<LapRecord> _laps = new List<LapRecord>();
+
+        /// <summary>
+        /// Зарегистрирует очередной круг для конкретного участника.
+        /// </summary>
+        public void ProcessLap(int participantId)
+        {
+            var lap = new LapRecord
+            {
+                Participant = participantId,
+                TotalSeconds = /* рассчитать общее время */,
+                LapNumber = CalculateLapNumber(participantId),
+                RecordTime = DateTime.Now
+            };
+
+            _laps.Add(lap);
+        }
+
+        /// <summary>
+        /// Получает список всех зарегистрированных кругов.
+        /// </summary>
+        public IEnumerable<LapRecord> GetAllLaps()
+        {
+            return _laps.AsEnumerable();
+        }
+
+        /// <summary>
+        /// Вычисляет порядковый номер круга для участника.
+        /// </summary>
+        private int CalculateLapNumber(int participantId)
+        {
+            return _laps.Where(x => x.Participant == participantId).Count() + 1;
+        }
+    }
+}
+
+
+using System;
+using System.Timers;
+
+namespace RunningEventTracker.Services
+{
+    /// <summary>
+    /// Реализует функциональность обратного отсчёта.
+    /// </summary>
+    public class RaceTimer : IRaceTimer
+    {
+        private readonly Timer _timer;
+
+        public RaceTimer()
+        {
+            _timer = new Timer(1000); // интервал обновлений раз в секунду
+            _timer.Tick += OnTick;
+        }
+
+        /// <summary>
+        /// Триггерированное событие при каждом новом тике таймера.
+        /// </summary>
+        public event EventHandler<EventArgs> Tick;
+
+        /// <summary>
+        /// Метод, вызванный при наступлении очередного интервала.
+        /// </summary>
+        protected virtual void OnTick(object sender, EventArgs args)
+        {
+            Tick?.Invoke(this, args);
+        }
+
+        /// <summary>
+        /// Начало отсчёта таймера.
+        /// </summary>
+        public void Start()
+        {
+            _timer.Start();
+        }
+
+        /// <summary>
+        /// Завершение работы таймера.
+        /// </summary>
+        public void Stop()
+        {
+            _timer.Stop();
+        }
+    }
+}
+
+
+using RunningEventTracker.Services;
+using System;
+using System.Windows.Forms;
+
+namespace RunningEventTracker
+{
+    /// <summary>
+    /// Главная форма приложения для отслеживания соревнований.
+    /// </summary>
+    public partial class MainForm : Form
+    {
+        private readonly IRaceTimer _raceTimer;
+        private readonly ILapProcessor _lapProcessor;
+        private readonly IActionHistory _actionHistory;
+
+        public MainForm(IRaceTimer raceTimer, ILapProcessor lapProcessor, IActionHistory actionHistory)
+        {
+            InitializeComponent();
+            _raceTimer = raceTimer;
+            _lapProcessor = lapProcessor;
+            _actionHistory = actionHistory;
+
+            _raceTimer.Tick += OnTimerTick;
+        }
+
+        /// <summary>
+        /// Метод, выполняемый при каждом тике таймера.
+        /// </summary>
+        private void OnTimerTick(object sender, EventArgs args)
+        {
+            // Логика тикера таймера
+        }
+
+        /// <summary>
+        /// Нажатие кнопки "Начать забег".
+        /// </summary>
+        private void BtnStart_Click(object sender, EventArgs e)
+        {
+            _raceTimer.Start();
+        }
+
+        /// <summary>
+        /// Нажатие кнопки "Зарегистрировать круг".
+        /// </summary>
+        private void BtnRecord_Click(object sender, EventArgs e)
+        {
+            // Валидируем входные данные
+            if(!int.TryParse(txtParticipant.Text, out int participant))
+            {
+                MessageBox.Show("Некорректный номер участника");
+                return;
+            }
+
+            _lapProcessor.ProcessLap(participant);
+            _actionHistory.Log($"Участник {participant}: новый круг");
+        }
+
+        /// <summary>
+        /// Нажатие кнопки "Остановить забег".
+        /// </summary>
+        private void BtnStop_Click(object sender, EventArgs e)
+        {
+            _raceTimer.Stop();
+        }
+    }
+}
+
+namespace RunningEventTracker
 {
     partial class MainForm
     {
@@ -96,7 +486,7 @@
             this.btnStop.TabIndex = 9;
             this.btnStop.Text = "Стоп";
             this.btnStop.UseVisualStyleBackColor = false;
-            this.btnStop.Click += new System.EventHandler(this.BtnStop_Click);
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
             // 
             // btnRecord
             // 
@@ -110,7 +500,7 @@
             this.btnRecord.TabIndex = 8;
             this.btnRecord.Text = "Зафиксировать круг";
             this.btnRecord.UseVisualStyleBackColor = false;
-            this.btnRecord.Click += new System.EventHandler(this.BtnRecord_Click);
+            this.btnRecord.Click += new System.EventHandler(this.btnRecord_Click);
             // 
             // btnStart
             // 
@@ -124,7 +514,7 @@
             this.btnStart.TabIndex = 7;
             this.btnStart.Text = "Начать отсчет";
             this.btnStart.UseVisualStyleBackColor = false;
-            this.btnStart.Click += new System.EventHandler(this.BtnStart_Click);
+            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
             // txtParticipant
             // 
@@ -268,3 +658,6 @@
         private System.Windows.Forms.DataGridView dataGridViewRecent;
     }
 }
+
+
+

@@ -62,5 +62,17 @@ namespace RunningEventTracker
         {
             _raceTimer.Stop();
         }
+
+        /// <summary>
+        /// Нажатие клавиши "Enter" в текстовом поле ввода номера участника.
+        /// </summary>
+        private void txtParticipant_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                // Автоматическая регистрация круга при нажатии Enter
+                btnRecord.PerformClick();
+            }
+        }
     }
 }

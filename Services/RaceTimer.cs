@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Timers;
+using System.Windows.Forms;
 
 namespace RunningEventTracker.Services
 {
@@ -12,8 +12,9 @@ namespace RunningEventTracker.Services
 
         public RaceTimer()
         {
-            _timer = new Timer(1000); // интервал обновлений раз в секунду
-            _timer.Tick += OnTick;
+            _timer = new Timer();
+            _timer.Interval = 1000; // интервал обновлений раз в секунду
+            _timer.Tick += OnTick;   // используем событие Tick
         }
 
         /// <summary>
