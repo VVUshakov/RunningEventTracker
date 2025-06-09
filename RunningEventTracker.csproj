@@ -54,6 +54,7 @@
     </Compile>
     <Compile Include="App.cs" />
     <Compile Include="Models\LapRecord.cs" />
+    <Compile Include="Models\ParticipantStats.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="MainForm.resx">
