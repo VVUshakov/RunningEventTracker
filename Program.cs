@@ -1,19 +1,26 @@
-﻿using System;
+﻿using RunningEventTracker;
+using System;
 using System.Windows.Forms;
 
-namespace RunningEventTracker
+class Program
 {
-    internal static class Program
+    static IServiceProvider ConfigureServices()
     {
-        /// <summary>
-        /// Главная точка входа для приложения.
-        /// </summary>
-        [STAThread]
-        static void Main()
+        var services = new ServiceCollection();
+        services.AddSingleton<IRaceTimer, RaceTimer>();
+        services.AddSingleton<ILapProcessor, LapProcessor>();
+        services.AddSingleton<IActionHistory, ActionHistory>();
+        services.AddTransient<MainForm>();
+        return services.BuildServiceProvider();
+    }
+
+    [STAThread]
+    static void Main()
+    {
+        var serviceProvider = ConfigureServices();
+        using(var mainForm = serviceProvider.GetRequiredService<MainForm>())
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(mainForm);
         }
     }
 }
