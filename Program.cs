@@ -1,6 +1,9 @@
-﻿using RunningEventTracker;
+﻿using Microsoft.Extensions.DependencyInjection;
+using RunningEventTracker;
+using RunningEventTracker.Services;
 using System;
 using System.Windows.Forms;
+
 
 class Program
 {

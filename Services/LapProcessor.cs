@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RunningEventTracker.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using RunningEventTracker.Models;
+using System.Collections.Generic;
 
 namespace RunningEventTracker.Services
 {
